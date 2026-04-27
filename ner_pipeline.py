@@ -39,7 +39,8 @@ def explore_data(df):
     """
     word_counts = df['text'].apply(lambda x: len(x.split()))
     return {
-        'shape': df.shape,
+       'shape': tuple(df.shape),
+
         'lang_counts': df['language'].value_counts().to_dict(),
         'category_counts': df['category'].value_counts().to_dict(),
         'text_length_stats': {
@@ -202,13 +203,10 @@ def evaluate_ner(predicted_df, gold_df):
           if (precision + recall) > 0 else 0)
     
     return {'precision': precision, 'recall': recall, 'f1': f1}
-
 if __name__ == "__main__":
-    # Load spaCy and HF models once, reuse across functions
     nlp = spacy.load("en_core_web_sm")
     hf_ner = hf_pipeline("ner", model="dslim/bert-base-NER")
 
-    # Load and explore
     df = load_data()
     if df is not None:
         summary = explore_data(df)
@@ -218,23 +216,19 @@ if __name__ == "__main__":
             print(f"Categories: {summary['category_counts']}")
             print(f"Text length (words): {summary['text_length_stats']}")
 
-        # Preprocess a sample to verify your function
         sample_row = df[df["language"] == "en"].iloc[0]
         sample_tokens = preprocess_text(sample_row["text"], nlp)
         if sample_tokens is not None:
             print(f"\nSample preprocessed tokens: {sample_tokens[:10]}")
 
-        # spaCy NER across the English corpus
         spacy_entities = extract_spacy_entities(df, nlp)
         if spacy_entities is not None:
             print(f"\nspaCy entities: {len(spacy_entities)} total")
 
-        # HF NER across the English corpus
         hf_entities = extract_hf_entities(df, hf_ner)
         if hf_entities is not None:
             print(f"HF entities: {len(hf_entities)} total")
 
-        # Compare the two systems
         if spacy_entities is not None and hf_entities is not None:
             comparison = compare_ner_outputs(spacy_entities, hf_entities)
             if comparison is not None:
@@ -242,14 +236,14 @@ if __name__ == "__main__":
                 print(f"spaCy-only: {len(comparison['spacy_only'])}")
                 print(f"HF-only: {len(comparison['hf_only'])}")
 
-        # Evaluate against gold standard
         gold = pd.read_csv("data/gold_entities.csv")
+
         if spacy_entities is not None:
             metrics = evaluate_ner(spacy_entities, gold)
             if metrics is not None:
                 print(f"\nspaCy evaluation: {metrics}")
 
-if hf_entities is not None:
-    hf_metrics = evaluate_ner(hf_entities, gold)
-    if hf_metrics is not None:
-        print(f"HF evaluation: {hf_metrics}")
+        if hf_entities is not None:          
+            hf_metrics = evaluate_ner(hf_entities, gold)
+            if hf_metrics is not None:
+                print(f"HF evaluation: {hf_metrics}")
