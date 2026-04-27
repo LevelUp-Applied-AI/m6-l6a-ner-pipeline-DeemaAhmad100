@@ -186,24 +186,33 @@ def evaluate_ner(predicted_df, gold_df):
     Returns:
         Dictionary with keys: 'precision', 'recall', 'f1' (floats 0-1).
     """
-    pred_set = set(zip(predicted_df['text_id'], 
-                       predicted_df['entity_text'], 
-                       predicted_df['entity_label']))
-    gold_set = set(zip(gold_df['text_id'], 
-                       gold_df['entity_text'], 
-                       gold_df['entity_label']))
-    
-    tp = len(pred_set & gold_set)   
-    fp = len(pred_set - gold_set)   
-    fn = len(gold_set - pred_set)   
-    
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    f1 = (2 * precision * recall / (precision + recall) 
-          if (precision + recall) > 0 else 0)
+   
+    if predicted_df is None or gold_df is None:
+        return None
+    if len(predicted_df) == 0 or len(gold_df) == 0:
+        return {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
 
+    pred_set = set(zip(
+        predicted_df['text_id'].astype(str),
+        predicted_df['entity_text'].astype(str),
+        predicted_df['entity_label'].astype(str)
+    ))
+    gold_set = set(zip(
+        gold_df['text_id'].astype(str),
+        gold_df['entity_text'].astype(str),
+        gold_df['entity_label'].astype(str)
+    ))
 
+    tp = len(pred_set & gold_set)
+    fp = len(pred_set - gold_set)
+    fn = len(gold_set - pred_set)
 
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    f1 = (2 * precision * recall / (precision + recall)
+          if (precision + recall) > 0 else 0.0)
+
+    return {'precision': precision, 'recall': recall, 'f1': f1}
 
 
 
